@@ -1,8 +1,8 @@
 import os
 import sys
-from utils import is_rpgmv_folder, copy_data_folder
-from json_handler import JSONHandler
-from request_controller import GPTRequestController
+from rpgmv_translator.utils import is_rpgmv_folder, copy_data_folder
+from rpgmv_translator.json_handler import JSONHandler
+from rpgmv_translator.request_controller import GPTRequestController
 
 class RPGMVTranslator:
     def __init__(self, directory):
@@ -17,7 +17,7 @@ class RPGMVTranslator:
         self.json_handler.read_and_process_jsons()
 
         # Assuming GPTRequestController has been properly implemented
-        controller = GPTRequestController(max_tokens=100)
+        controller = GPTRequestController(max_tokens=100, language='Japanese')
         controller.process_csv('original.csv', 'translated.csv')
 
         self.json_handler.update_jsons_with_translations()

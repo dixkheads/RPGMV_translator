@@ -2,7 +2,7 @@ import argparse
 import os
 import sys
 from rpgmv_translator.translate import RPGMVTranslator  # Import the RPGMVTranslator class
-import config_manager
+import rpgmv_translator.config_manager as config_manager
 
 def main():
     parser = argparse.ArgumentParser(description="RPGMV Translator Command Line Tool")

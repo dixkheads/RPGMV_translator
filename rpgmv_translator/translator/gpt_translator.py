@@ -1,6 +1,6 @@
 import openai
 import time
-from translator_base import AbstractTranslator
+from rpgmv_translator.translator.translator_base import AbstractTranslator
 
 class GPTTranslator(AbstractTranslator):
     def __init__(self, api_key):

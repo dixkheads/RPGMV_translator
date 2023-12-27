@@ -1,4 +1,4 @@
-from tokenizer_base import AbstractTokenizer
+from rpgmv_translator.tokenizer.tokenizer_base import AbstractTokenizer
 import nltk
 from nltk.tokenize import word_tokenize
 

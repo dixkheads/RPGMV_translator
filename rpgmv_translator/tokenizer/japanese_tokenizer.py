@@ -1,4 +1,4 @@
-from tokenizer_base import AbstractTokenizer
+from rpgmv_translator.tokenizer.tokenizer_base import AbstractTokenizer
 from sudachipy import tokenizer
 from sudachipy import dictionary
 

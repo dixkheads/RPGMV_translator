@@ -2,19 +2,37 @@ import csv
 import json
 import os
 from rpgmv_translator.translator.gpt_translator import GPTTranslator  # Assuming GPTTranslator is in gpt_translator.py
-from utils import estimate_token_count
+# from utils import estimate_token_count
+from rpgmv_translator.tokenizer.english_tokenizer import EnglishTokenizer
+from rpgmv_translator.tokenizer.japanese_tokenizer import JapaneseTokenizer
 
 
 class GPTRequestController:
-    def __init__(self, max_tokens):
+    def __init__(self, max_tokens, language):
         self.max_tokens = max_tokens
+        self.language = language
         self.api_key = self._load_api_key_from_config('config.json')
         self.translator = GPTTranslator(self.api_key)
+        self.tokenizer = self._select_tokenizer(language)
 
     def _load_api_key_from_config(self, config_path):
-        with open(config_path, 'r') as file:
-            config = json.load(file)
-        return config['openai_api_key']
+        try:
+            with open(config_path, 'r') as file:
+                config = json.load(file)
+                api_key = config.get('openai_api_key')
+                if not api_key:
+                    raise ValueError("API key not found in config file.")
+                return api_key
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Config file not found at path: {config_path}")
+
+    def _select_tokenizer(self, language):
+        if language == 'English':
+            return EnglishTokenizer()
+        elif language == 'Japanese':
+            return JapaneseTokenizer()
+        else:
+            raise ValueError(f"Unsupported language: {language}")
 
     def process_csv(self, original_csv_path, translated_csv_path, max_tokens):
         processed_uuids = self._get_processed_uuids(translated_csv_path)
@@ -25,7 +43,7 @@ class GPTRequestController:
             reader = csv.DictReader(csvfile)
             for row in reader:
                 if row['uuid'] not in processed_uuids:
-                    token_count = estimate_token_count(row['text'])
+                    token_count = self.tokenizer.get_token_count(row['text'])
 
                     if token_count > max_tokens:
                         # If a single entry is too large, split and translate immediately
@@ -53,27 +71,22 @@ class GPTRequestController:
                     self._write_to_csv(translated_csv_path, row['uuid'], translated)
 
     def _split_text(self, text, max_tokens):
-        sentences = sent_tokenize(text)
+        tokens = self.tokenizer.tokenize(text)
         segments = []
-        current_segment = ""
+        current_segment = []
+        current_token_count = 0
 
-        for sentence in sentences:
-            if estimate_token_count(current_segment + sentence) <= max_tokens:
-                current_segment += sentence + " "
+        for token in tokens:
+            if current_token_count + self.tokenizer.get_token_count(token) <= max_tokens:
+                current_segment.append(token)
+                current_token_count += self.tokenizer.get_token_count(token)
             else:
-                if current_segment:
-                    segments.append(current_segment)
-                current_segment = sentence + " "
-
-                # If a single sentence is too long, split it further (naive approach)
-                while estimate_token_count(current_segment) > max_tokens:
-                    part = current_segment[:max_tokens]
-                    remaining = current_segment[max_tokens:]
-                    segments.append(part)
-                    current_segment = remaining
+                segments.append(' '.join(current_segment))
+                current_segment = [token]
+                current_token_count = self.tokenizer.get_token_count(token)
 
         if current_segment:
-            segments.append(current_segment)
+            segments.append(' '.join(current_segment))
 
         return segments
 

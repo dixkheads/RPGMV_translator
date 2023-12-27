@@ -2,7 +2,7 @@ import os
 import json
 import csv
 import uuid
-from utils import contains_japanese
+from rpgmv_translator.utils import contains_japanese
 
 class JSONHandler:
     def __init__(self, directory):
