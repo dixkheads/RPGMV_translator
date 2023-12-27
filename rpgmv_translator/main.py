@@ -9,7 +9,7 @@ def main():
     parser.add_argument('-addkey', '--addkey', type=str, help='Add API key to config')
     parser.add_argument('-showkey', '--showkey', action='store_true', help='Show API key')
     parser.add_argument('-reset', '--reset', action='store_true', help='Reset config')
-    parser.add_argument('-translate', '--translate', action='store_true', help='Start translating')
+    parser.add_argument('-translate', '--translate', type=str, nargs='?', const=os.getcwd(), default=None, help='Start translating. Specify the directory path (optional).')
 
     args = parser.parse_args()
 
@@ -22,9 +22,10 @@ def main():
     elif args.reset:
         config_manager.reset_config()
         print("Config reset.")
-    elif args.translate:
+    elif args.translate is not None:
+        directory = args.translate
         print("Starting translation...")
-        translator = RPGMVTranslator(args.translate)
+        translator = RPGMVTranslator(directory)
         translator.translate()
         print("Translation completed.")
 

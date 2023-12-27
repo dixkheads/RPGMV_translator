@@ -6,7 +6,7 @@ import re
 
 
 def is_rpgmv_folder(directory):
-    required_folders = ['audio', 'data', 'fonts', 'movies']
+    required_folders = ['audio', 'data', 'img']
     www_path = os.path.join(directory, 'www')
 
     if os.path.exists(www_path) and all(os.path.exists(os.path.join(www_path, folder)) for folder in required_folders):

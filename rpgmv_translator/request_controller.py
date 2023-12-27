@@ -1,8 +1,9 @@
 import csv
 import json
 import os
-from rpgmv_translator.translator.gpt_translator import GPTTranslator  # Assuming GPTTranslator is in gpt_translator.py
+# from rpgmv_translator.translator.gpt_translator import GPTTranslator  # Assuming GPTTranslator is in gpt_translator.py
 # from utils import estimate_token_count
+from rpgmv_translator.translator.gpt_translator import GPTTranslator
 from rpgmv_translator.tokenizer.english_tokenizer import EnglishTokenizer
 from rpgmv_translator.tokenizer.japanese_tokenizer import JapaneseTokenizer
 

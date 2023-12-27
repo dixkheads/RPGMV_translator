@@ -36,7 +36,7 @@ class GPTTranslator(AbstractTranslator):
         raise Exception("Failed to get valid translation after retries.")
 
     def _build_prompt(self, texts):
-        prompt = "Translate the following sentences to Chinese:\n"
+        prompt = "Translate the following sentences to Chinese.:\n"
         for text in texts:
             prompt += f"- {text}\n"
         return prompt
