@@ -1,6 +1,8 @@
 import argparse
+import os
+import sys
+from rpgmv_translator.translate import RPGMVTranslator  # Import the RPGMVTranslator class
 import config_manager
-# other imports...
 
 def main():
     parser = argparse.ArgumentParser(description="RPGMV Translator Command Line Tool")
@@ -21,9 +23,10 @@ def main():
         config_manager.reset_config()
         print("Config reset.")
     elif args.translate:
-        # Call translation process here
         print("Starting translation...")
-        # ...
+        translator = RPGMVTranslator(args.translate)
+        translator.translate()
+        print("Translation completed.")
 
 if __name__ == '__main__':
     main()
