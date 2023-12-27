@@ -1,12 +1,13 @@
 import openai
 import time
+from translator_base import AbstractTranslator
 
-class GPTTranslator:
+class GPTTranslator(AbstractTranslator):
     def __init__(self, api_key):
         self.api_key = api_key
         openai.api_key = self.api_key
 
-    def translate_to_chinese(self, japanese_texts):
+    def translate(self, texts):
         max_retries = 10
         attempts = 0
 
@@ -14,8 +15,8 @@ class GPTTranslator:
             try:
                 response = openai.Completion.create(
                     model="gpt-3.5-turbo",
-                    prompt=self._build_prompt(japanese_texts),
-                    max_tokens=50 * len(japanese_texts),  # Adjust max_tokens as needed
+                    prompt=self._build_prompt(texts),
+                    max_tokens=50 * len(texts),  # Adjust max_tokens as needed
                     n=1,
                     stop=None,
                     temperature=0.7
@@ -23,7 +24,7 @@ class GPTTranslator:
 
                 translated_texts = response.choices[0].text.strip().split('\n')
 
-                if self._is_valid_response(japanese_texts, translated_texts):
+                if self._is_valid_response(texts, translated_texts):
                     return translated_texts
                 else:
                     attempts += 1
@@ -34,9 +35,9 @@ class GPTTranslator:
 
         raise Exception("Failed to get valid translation after retries.")
 
-    def _build_prompt(self, japanese_texts):
-        prompt = "Translate the following Japanese sentences to Chinese:\n"
-        for text in japanese_texts:
+    def _build_prompt(self, texts):
+        prompt = "Translate the following sentences to Chinese:\n"
+        for text in texts:
             prompt += f"- {text}\n"
         return prompt
 

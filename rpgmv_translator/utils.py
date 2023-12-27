@@ -1,6 +1,9 @@
 import os
 import shutil
 import re
+# import nltk
+# from nltk.tokenize import word_tokenize
+
 
 def is_rpgmv_folder(directory):
     required_folders = ['audio', 'data', 'fonts', 'movies']
@@ -26,3 +29,7 @@ def contains_japanese(text):
     # Kanji: U+4E00 to U+9FAF
     japanese_regex = r'[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]'
     return bool(re.search(japanese_regex, text))
+
+
+def estimate_token_count(text):
+    return len(text)
