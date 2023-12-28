@@ -15,11 +15,33 @@ def is_rpgmv_folder(directory):
         return True
     return False
 
-def copy_data_folder(directory):
-    data_path = os.path.join(directory, 'data')
-    backup_path = os.path.join(directory, 'data_old')
-    if os.path.exists(data_path):
-        shutil.copytree(data_path, backup_path, dirs_exist_ok=True)
+
+def duplicate_json_files(directory):
+    if not is_rpgmv_folder(directory):
+        raise ValueError("The specified directory is not a valid RPGMV folder.")
+
+    for dirpath, dirnames, filenames in os.walk(directory):
+        for filename in filenames:
+            if filename.endswith('.json'):
+                original_path = os.path.join(dirpath, filename)
+                backup_path = os.path.join(dirpath, f"{filename}.old")
+                shutil.copy2(original_path, backup_path)
+
+def restore_from_backup(directory):
+    if not is_rpgmv_folder(directory):
+        raise ValueError("The specified directory is not a valid RPGMV folder.")
+
+    restored_any = False
+    for dirpath, dirnames, filenames in os.walk(directory):
+        for filename in filenames:
+            if filename.endswith('.json.old'):
+                backup_path = os.path.join(dirpath, filename)
+                original_path = os.path.join(dirpath, filename.replace('.old', ''))
+                shutil.copy2(backup_path, original_path)
+                restored_any = True
+
+    if not restored_any:
+        raise FileNotFoundError("No .old backup files found to restore.")
 
 
 def contains_japanese(text):

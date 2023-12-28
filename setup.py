@@ -6,7 +6,7 @@ setup(
     packages=find_packages(),
     entry_points={
         'console_scripts': [
-            'RPGMV_translator=rpgmv_translator.main:main',
+            'mvtrans=rpgmv_translator.main:main',
         ],
     },
     # Add other metadata like author, description, etc.
