@@ -79,8 +79,17 @@ class JSONHandler:
         return re.sub(r'<hint:(.*?)>', replace_func, value)
 
     def _write_new_entries_to_csv(self, new_entries, csv_path):
+        # Check if the file is new or empty (i.e., needs a header)
+        file_is_new = not os.path.exists(csv_path) or os.stat(csv_path).st_size == 0
+
         with open(csv_path, mode='a', encoding='utf-8', newline='') as csv_file:
             writer = csv.writer(csv_file)
+
+            # If the file is new, write the header first
+            if file_is_new:
+                writer.writerow(['uuid', 'text'])
+
+            # Write the new entries
             for text, entry_uuid in new_entries.items():
                 writer.writerow([entry_uuid, text])
 

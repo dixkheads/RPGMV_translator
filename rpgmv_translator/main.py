@@ -11,8 +11,7 @@ def main():
     parser.add_argument('-showkey', '--showkey', action='store_true', help='Show API key')
     parser.add_argument('-reset', '--reset', action='store_true', help='Reset config')
     parser.add_argument('-translate', '--translate', type=str, nargs='?', const=os.getcwd(), default=None, help='Start translating. Specify the directory path (optional).')
-    parser.add_argument('-restore', '--restore', type=str,
-                        help='Restore data from .old backups in the specified directory')
+    parser.add_argument('-restore', '--restore', type=str, nargs='?', const=os.getcwd(), default=None, help='Restore data from .old backups. Specify the directory path (optional).')
 
     args = parser.parse_args()
 
@@ -25,7 +24,7 @@ def main():
     elif args.reset:
         config_manager.reset_config()
         print("Config reset.")
-    elif args.restore:
+    elif args.restore is not None:
         try:
             utils.restore_from_backup(args.restore)
             print(f"Data successfully restored from backups in {args.restore}")

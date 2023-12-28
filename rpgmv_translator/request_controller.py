@@ -6,6 +6,7 @@ import os
 from rpgmv_translator.translator.gpt_translator import GPTTranslator
 from rpgmv_translator.tokenizer.english_tokenizer import EnglishTokenizer
 from rpgmv_translator.tokenizer.japanese_tokenizer import JapaneseTokenizer
+from tqdm import tqdm
 
 
 class GPTRequestController:
@@ -16,7 +17,11 @@ class GPTRequestController:
         self.translator = GPTTranslator(self.api_key)
         self.tokenizer = self._select_tokenizer(language)
 
-    def _load_api_key_from_config(self, config_path):
+    def _load_api_key_from_config(self, file_name):
+        # Get the directory of the current script
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        config_path = os.path.join(dir_path, file_name)
+
         try:
             with open(config_path, 'r') as file:
                 config = json.load(file)
@@ -27,6 +32,7 @@ class GPTRequestController:
         except FileNotFoundError:
             raise FileNotFoundError(f"Config file not found at path: {config_path}")
 
+
     def _select_tokenizer(self, language):
         if language == 'English':
             return EnglishTokenizer()
@@ -35,14 +41,37 @@ class GPTRequestController:
         else:
             raise ValueError(f"Unsupported language: {language}")
 
-    def process_csv(self, original_csv_path, translated_csv_path, max_tokens):
+    def _count_tokens_and_estimate_price(self, original_csv_path):
+        total_token_count = 0
+        with open(original_csv_path, 'r', encoding='utf-8') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                token_count = self.tokenizer.get_token_count(row['text'])
+                total_token_count += token_count
+
+        # Assuming a hypothetical price per token (e.g., $0.0001 per token)
+        price_per_token = 0.001/1000
+        estimated_price = total_token_count * price_per_token
+
+        return total_token_count, estimated_price
+
+    def process_csv(self, original_csv_path, translated_csv_path):
+        total_token_count, estimated_price = self._count_tokens_and_estimate_price(original_csv_path)
+        print(f"Total tokens to translate: {total_token_count}")
+        print(f"Estimated price for translation: ${estimated_price:.2f}")
+
+        max_tokens = self.max_tokens
         processed_uuids = self._get_processed_uuids(translated_csv_path)
         texts_to_translate = []
         current_token_count = 0
 
         with open(original_csv_path, 'r', encoding='utf-8') as csvfile:
             reader = csv.DictReader(csvfile)
-            for row in reader:
+            total_rows = sum(1 for row in reader)  # Count total rows for tqdm
+            csvfile.seek(0)  # Reset CSV file to start
+            next(reader)  # Skip header
+
+            for row in tqdm(reader, total=total_rows, desc="Translating..."):
                 if row['uuid'] not in processed_uuids:
                     token_count = self.tokenizer.get_token_count(row['text'])
 
