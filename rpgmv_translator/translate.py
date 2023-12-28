@@ -26,7 +26,7 @@ class RPGMVTranslator:
 
         if not progress.get('process_csv'):
             # Assuming GPTRequestController has been properly implemented
-            controller = GPTRequestController(max_tokens=100, language='Japanese')
+            controller = GPTRequestController(max_tokens=300, language='Japanese')
             controller.process_csv('original.csv', 'translated.csv')
             update_progress_log(self.directory, 'process_csv')
 

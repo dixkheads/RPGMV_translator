@@ -76,29 +76,31 @@ class GPTRequestController:
                     token_count = self.tokenizer.get_token_count(row['text'])
 
                     if token_count > max_tokens:
-                        # If a single entry is too large, split and translate immediately
+                        # Handle long single entries immediately
                         split_texts = self._split_text(row['text'], max_tokens)
                         for text in split_texts:
                             translated_text = self.translator.translate([text])[0]
                             self._write_to_csv(translated_csv_path, row['uuid'], translated_text)
                     else:
-                        # Accumulate texts until token limit
+                        # Accumulate (uuid, text) pairs until token limit is reached
                         if current_token_count + token_count > max_tokens:
                             # Translate accumulated texts
-                            translated_texts = self.translator.translate(texts_to_translate)
-                            for original, translated in zip(texts_to_translate, translated_texts):
-                                self._write_to_csv(translated_csv_path, row['uuid'], translated)
+                            uuids, texts = zip(*texts_to_translate)
+                            translated_texts = self.translator.translate(list(texts))
+                            for uuid, translated in zip(uuids, translated_texts):
+                                self._write_to_csv(translated_csv_path, uuid, translated)
                             texts_to_translate = []
                             current_token_count = 0
 
-                        texts_to_translate.append(row['text'])
+                        texts_to_translate.append((row['uuid'], row['text']))
                         current_token_count += token_count
 
-            # Translate any remaining texts
+                # Translate any remaining texts
             if texts_to_translate:
-                translated_texts = self.translator.translate(texts_to_translate)
-                for original, translated in zip(texts_to_translate, translated_texts):
-                    self._write_to_csv(translated_csv_path, row['uuid'], translated)
+                uuids, texts = zip(*texts_to_translate)
+                translated_texts = self.translator.translate(list(texts))
+                for uuid, translated in zip(uuids, translated_texts):
+                    self._write_to_csv(translated_csv_path, uuid, translated)
 
     def _split_text(self, text, max_tokens):
         tokens = self.tokenizer.tokenize(text)
