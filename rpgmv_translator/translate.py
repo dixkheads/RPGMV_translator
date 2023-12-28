@@ -7,10 +7,21 @@ from rpgmv_translator.utils import read_progress_log, update_progress_log
 
 class RPGMVTranslator:
     def __init__(self, path):
+        # Check if the path is an existing file
         if os.path.isfile(path) and path.endswith('.json'):
             self.directory = os.path.dirname(path)
             self.specific_file = os.path.basename(path)
+        elif path.endswith('.json'):
+            # Attempt to concatenate with the absolute working directory
+            abs_working_dir = os.path.abspath(os.getcwd())
+            full_path = os.path.join(abs_working_dir, path)
+            if os.path.isfile(full_path):
+                self.directory = os.path.dirname(full_path)
+                self.specific_file = os.path.basename(full_path)
+            else:
+                raise ValueError(f"The file path {path} does not exist.")
         else:
+            # If a directory is given, use it directly
             self.directory = path
             self.specific_file = None
 
