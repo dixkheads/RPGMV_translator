@@ -6,9 +6,16 @@ from rpgmv_translator.request_controller import GPTRequestController
 from rpgmv_translator.utils import read_progress_log, update_progress_log
 
 class RPGMVTranslator:
-    def __init__(self, directory):
-        self.directory = directory
-        self.json_handler = JSONHandler(directory)
+    def __init__(self, path):
+        if os.path.isfile(path) and path.endswith('.json'):
+            self.directory = os.path.dirname(path)
+            self.specific_file = os.path.basename(path)
+        else:
+            self.directory = path
+            self.specific_file = None
+
+        self.json_handler = JSONHandler(self.directory, self.specific_file)
+
 
     def translate(self):
         if not is_rpgmv_folder(self.directory):
@@ -17,7 +24,7 @@ class RPGMVTranslator:
         progress = read_progress_log(self.directory)
 
         if not progress.get('duplicate_json_files'):
-            duplicate_json_files(self.directory)
+            duplicate_json_files(self.directory, self.specific_file)
             update_progress_log(self.directory, 'duplicate_json_files')
 
         if not progress.get('read_and_process_jsons'):

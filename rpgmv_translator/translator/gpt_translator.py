@@ -4,7 +4,7 @@ import os
 import openai
 import time
 from rpgmv_translator.translator.translator_base import AbstractTranslator
-from rpgmv_translator.utils import contains_japanese
+from rpgmv_translator.utils import contains_japanese_strict
 
 class GPTTranslator(AbstractTranslator):
     def __init__(self, api_key=None):
@@ -32,7 +32,7 @@ class GPTTranslator(AbstractTranslator):
 
                 if self._is_valid_response(texts, translated_dict):
                     # Map the dictionary back to a list, using the original text if translation is missing
-                    return [translated_dict.get(str(i), original_text) for i, original_text in enumerate(texts)]
+                    return [translated_dict.get(original_text, original_text) for original_text in texts]
                 else:
                     print(f"Invalid response or format: {response_text}.")
                     attempts += 1
@@ -77,12 +77,33 @@ class GPTTranslator(AbstractTranslator):
 
     def _build_prompt(self, texts):
         json_dict = json.dumps({str(i): text for i, text in enumerate(texts)}, ensure_ascii=False)
-        prompt = f"Translate the following Japanese strings to Chinese. Return a single translated dictionary with the ORIGINAL JAPANESE TEXTS AS KEY. Don't translate English. Do not return anything other than a translated dictionary:\n{json_dict}"
+        prompt = f"""Translate the following Japanese strings to Chinese. Return a single translated dictionary with the ORIGINAL JAPANESE TEXTS AS KEY and TRANSLATED CHINESE TEXTS AS VALUES. DO NOT USE INDICES AS KEYS. Don't translate English. Do not return anything other than a translated dictionary:\n{json_dict}
+
+        The following is an example response:
+        {{
+            'こんにちは': '你好',
+            'これはテストです': '这是一个测试',
+            '奴隷たち': '奴隶们',
+            'ククク、今回も教会で産ませてやろう。': '呵呵呵，这次也让她在教堂里生吧。',
+            '玉袋ン中の精液、': '在睾丸里的精液，',
+            'おいおい、挿れただけでか？': '喂喂，只是插入而已？'
+        }}"""
         return prompt
 
     def _build_enhanced_prompt(self, texts):
         json_dict = json.dumps({str(i): text for i, text in enumerate(texts)}, ensure_ascii=False)
-        prompt = f"TRANSLATE the following Japanese strings TO CHINESE. Return a single translated dictionary with the ORIGINAL JAPANESE TEXTS AS KEY. Don't translate English. Do not return anything other than a translated dictionary. Don't leave Japanese characters in the translated text:\n{json_dict}"
+        prompt = f"""TRANSLATE the following Japanese strings TO CHINESE. Return a single translated dictionary with the ORIGINAL JAPANESE TEXTS AS KEYS and TRANSLATED CHINESE TEXTS AS VALUES. DO NOT USE INDICES AS KEYS. Don't translate English. Do not return anything other than a translated dictionary. DO NOT LEAVE ANY JAPANESE UNTRANSLATED, and the values SHOULD NOT CONTAIN JAPANESE CHARACTERS:\n{json_dict}
+
+        The following is an example response:
+        {{
+            'こんにちは': '你好',
+            'これはテストです': '这是一个测试',
+            '奴隷たち': '奴隶们',
+            'ククク、今回も教会で産ませてやろう。': '呵呵呵，这次也让她在教堂里生吧。',
+            '玉袋ン中の精液、': '在睾丸里的精液，',
+            'おいおい、挿れただけでか？': '喂喂，只是插入而已？'
+        }}
+        """
         return prompt
 
     def _is_valid_response(self, original_texts, translated_texts):
@@ -94,13 +115,11 @@ class GPTTranslator(AbstractTranslator):
             print(f"Invalid response: Insufficient length. Expected at least {len(original_texts) * 0.9}, got {len(translated_texts)}.")
             return False
 
-        # Check if all keys in the translated_texts are in the original_texts
-        original_text_set = set(str(i) for i in range(len(original_texts)))
-        if not all(key in original_text_set for key in translated_texts.keys()):
+        if not all(key in original_texts for key in translated_texts.keys()):
             print("Invalid response: Some keys in the translated text are not found in the original text.")
             return False
 
-        japanese_count = sum(contains_japanese(text) for text in translated_texts.values())
+        japanese_count = sum(contains_japanese_strict(text) for text in translated_texts.values())
         if japanese_count > len(translated_texts) * 0.2:
             print(f"Invalid response: More than 20% of the translated texts contain Japanese.")
             self.prompt = self._build_enhanced_prompt(original_texts)

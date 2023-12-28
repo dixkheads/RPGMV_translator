@@ -3,11 +3,12 @@ import json
 import csv
 import uuid
 import re
-from rpgmv_translator.utils import contains_japanese
+from rpgmv_translator.utils import is_valid_field_to_translate
 
 class JSONHandler:
-    def __init__(self, directory):
+    def __init__(self, directory, specific_file=None):
         self.directory = directory
+        self.specific_file = specific_file
         self.original_csv = os.path.join(directory, 'original.csv')
         self.translated_csv = os.path.join(directory, 'translated.csv')
 
@@ -17,7 +18,7 @@ class JSONHandler:
 
         for dirpath, dirnames, filenames in os.walk(self.directory):
             for file_name in filenames:
-                if file_name.endswith('.json'):
+                if file_name.endswith('.json') and (self.specific_file is None or file_name == self.specific_file):
                     file_path = os.path.join(dirpath, file_name)
                     with open(file_path, 'r', encoding='utf-8') as file:
                         data = json.load(file)
@@ -44,7 +45,7 @@ class JSONHandler:
     def _process_string(self, value, existing_entries, new_entries):
         if self._is_xml_like(value):
             return self._process_xml_like_field(value, existing_entries, new_entries)
-        elif contains_japanese(value):
+        elif is_valid_field_to_translate(value):
             entry_uuid = existing_entries.get(value, str(uuid.uuid4()))
             existing_entries[value] = entry_uuid
             new_entries[value] = entry_uuid
@@ -98,7 +99,7 @@ class JSONHandler:
 
         for dirpath, dirnames, filenames in os.walk(self.directory):
             for file_name in filenames:
-                if file_name.endswith('.json'):
+                if file_name.endswith('.json') and (self.specific_file is None or file_name == self.specific_file):
                     file_path = os.path.join(dirpath, file_name)
                     with open(file_path, 'r', encoding='utf-8') as file:
                         data = json.load(file)
