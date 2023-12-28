@@ -23,13 +23,15 @@ def copy_data_folder(directory):
 
 
 def contains_japanese(text):
-    # Regular expression that matches Japanese character ranges
-    # Hiragana: U+3040 to U+309F
-    # Katakana: U+30A0 to U+30FF
-    # Kanji: U+4E00 to U+9FAF
-    japanese_regex = r'[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]'
-    return bool(re.search(japanese_regex, text))
+    # Regular expression that matches Japanese Hiragana and Katakana
+    # Hiragana: U+3040 to U+309F, Katakana: U+30A0 to U+30FF
+    japanese_regex = r'[\u3040-\u309F\u30A0-\u30FF]'
 
+    # Check for the presence of Hiragana or Katakana
+    if re.search(japanese_regex, text):
+        return True
 
-def estimate_token_count(text):
-    return len(text)
+    # If needed, add additional logic here to handle Kanji more selectively
+    # ...
+
+    return False

@@ -1,3 +1,6 @@
+import json
+import re
+
 import openai
 import time
 from rpgmv_translator.translator.translator_base import AbstractTranslator
@@ -22,23 +25,37 @@ class GPTTranslator(AbstractTranslator):
                     temperature=0.7
                 )
 
-                translated_texts = response.choices[0].text.strip().split('\n')
+                response_text = response.choices[0].text.strip()
+                translated_texts = self._extract_list_from_response(response_text)
 
                 if self._is_valid_response(texts, translated_texts):
                     return translated_texts
                 else:
+                    print(f"Invalid response or format: {response_text}")
                     attempts += 1
                     time.sleep(1)  # Wait a bit before retrying
-            except openai.error.OpenAIError:
+            except openai.error.OpenAIError as e:
+                print(f"OpenAI API error: {e}")
                 attempts += 1
                 time.sleep(1)  # Wait a bit before retrying
 
         raise Exception("Failed to get valid translation after retries.")
 
+    def _extract_list_from_response(self, response_text):
+        # Extract list-like string from response
+        match = re.search(r'\[.*\]', response_text)
+        if match:
+            list_str = match.group(0)
+            try:
+                return json.loads(list_str)
+            except json.JSONDecodeError:
+                return None  # or handle the error as needed
+        return None
+
     def _build_prompt(self, texts):
-        prompt = "Translate the following sentences to Chinese.:\n"
-        for text in texts:
-            prompt += f"- {text}\n"
+        # Format the list of texts as a JSON string
+        json_list = json.dumps(texts, ensure_ascii=False)
+        prompt = f"Translate the following Japanese strings to Chinese. Return only a single translated list. Do not translate English. Do not return anything other than a translated list:\n{json_list}"
         return prompt
 
     def _is_valid_response(self, original_texts, translated_texts):

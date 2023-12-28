@@ -33,17 +33,24 @@ class JSONHandler:
                 if isinstance(value, (dict, list)):
                     self._process_json(value, existing_entries, new_entries)
                 elif isinstance(value, str):
-                    if self._is_xml_like(value):
-                        processed_value = self._process_xml_like_field(value, existing_entries, new_entries)
-                        data[key] = processed_value
-                    elif contains_japanese(value):
-                        entry_uuid = existing_entries.get(value, str(uuid.uuid4()))
-                        existing_entries[value] = entry_uuid
-                        new_entries[value] = entry_uuid
-                        data[key] = entry_uuid
+                    data[key] = self._process_string(value, existing_entries, new_entries)
         elif isinstance(data, list):
-            for item in data:
-                self._process_json(item, existing_entries, new_entries)
+            for i, item in enumerate(data):
+                if isinstance(item, (dict, list)):
+                    self._process_json(item, existing_entries, new_entries)
+                elif isinstance(item, str):
+                    data[i] = self._process_string(item, existing_entries, new_entries)
+
+    def _process_string(self, value, existing_entries, new_entries):
+        if self._is_xml_like(value):
+            return self._process_xml_like_field(value, existing_entries, new_entries)
+        elif contains_japanese(value):
+            entry_uuid = existing_entries.get(value, str(uuid.uuid4()))
+            existing_entries[value] = entry_uuid
+            new_entries[value] = entry_uuid
+            return entry_uuid
+        else:
+            return value
 
     def _load_existing_entries(self, csv_path):
         entries = {}
