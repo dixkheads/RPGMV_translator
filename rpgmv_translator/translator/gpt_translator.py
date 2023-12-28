@@ -12,8 +12,8 @@ class GPTTranslator(AbstractTranslator):
         self.client = openai.OpenAI(api_key=self.api_key)
         self.prompt = None
 
-    def translate(self, texts):
-        max_retries = 10
+    def translate(self, texts, model="gpt-3.5-turbo", split_attempt=False):
+        max_retries = 6 if not split_attempt else 2
         attempts = 0
         retry_delay = 1
         self.prompt = self._build_prompt(texts)
@@ -21,40 +21,37 @@ class GPTTranslator(AbstractTranslator):
         while attempts < max_retries:
             try:
                 response = self.client.chat.completions.create(
-                    messages=[
-                        {"role": "system", "content": self.prompt},
-                    ],
-                    model="gpt-3.5-turbo",
+                    messages=[{"role": "system", "content": self.prompt}],
+                    model=model,
                 )
 
                 response_text = response.choices[0].message.content
                 translated_dict = self._extract_dict_from_response(response_text)
 
                 if self._is_valid_response(texts, translated_dict):
-                    # Map the dictionary back to a list, using the original text if translation is missing
                     return [translated_dict.get(original_text, original_text) for original_text in texts]
                 else:
                     print(f"Invalid response or format: {response_text}.")
                     attempts += 1
-                    time.sleep(1)
+                    if attempts > 2 and model != "gpt-4":
+                        model = "gpt-4"
+                        print("Switching to GPT-4 model.")
+                    elif attempts > 4 and not split_attempt:
+                        midpoint = len(texts) // 2
+                        first_half = self.translate(texts[:midpoint], model, split_attempt=True)
+                        second_half = self.translate(texts[midpoint:], model, split_attempt=True)
+                        return first_half + second_half
+                    time.sleep(retry_delay)
             except openai.RateLimitError as e:
                 print(f"Rate limit exceeded, retrying in {retry_delay} seconds: {e}")
                 time.sleep(retry_delay)
-                retry_delay *= 2  # Exponential backoff
-            except openai.APIConnectionError as e:
-                print(f"Failed to connect to OpenAI API: {e}")
-                break  # Do not retry for connection errors
-            except openai.APITimeoutError as e:
-                print(f"OpenAI API request timed out: {e}")
-                break  # Do not retry for timeout errors
-            except openai.AuthenticationError as e:
-                print(f"Authentication issue with the API key: {e}")
-                break  # Do not retry for authentication errors
-            except openai.APIError as e:
-                print(f"OpenAI API returned an API Error: {e}")
-                break  # Do not retry for general API errors
+                retry_delay *= 2
+            except (openai.APIConnectionError, openai.APITimeoutError, openai.AuthenticationError, openai.APIError) as e:
+                print(f"API error: {e}")
+                break
 
         raise Exception("Failed to get valid translation after retries.")
+
 
 
     def _extract_dict_from_response(self, full_response):

@@ -25,7 +25,14 @@ class RPGMVTranslator:
             self.directory = path
             self.specific_file = None
 
+
         self.json_handler = JSONHandler(self.directory, self.specific_file)
+
+        print(f"Operating on directory: {self.directory}")
+        if self.specific_file:
+            print(f"Specific file to process: {self.specific_file}")
+        else:
+            print("Processing all JSON files in the directory.")
 
 
     def translate(self):
